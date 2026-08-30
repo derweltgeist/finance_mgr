@@ -1,0 +1,3 @@
+from finance_mgr.main import Main
+
+Main()
