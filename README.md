@@ -17,7 +17,7 @@ Config is stored in ```./config.toml```, while database's default path is ```./d
 python3 run.py
 ```
 
-To run the program. Make sure ```sql``` and ```finance_mgr``` folder exist.
+To run the program, make sure ```sql``` and ```finance_mgr``` folder exist.
 
 ## Usages
 
