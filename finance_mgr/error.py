@@ -20,3 +20,21 @@ class InvalidDatabaseShowFlags(Exception):
 
 class InvalidValueFlagsFormat(Exception):
     """Used for invalid formats of value flags."""
+    pass
+
+class InvalidDatabaseError(Exception):
+    """Used for invalid database."""
+    pass
+
+class InvalidSheetFilePath(Exception):
+    """Used for invalid sheet path."""
+    pass
+
+class InvalidSheetContent(Exception):
+    """Used for invalid sheet content."""
+    pass
+
+class InvalidGetArg(Exception):
+    """Used for invalid arg of get, internal."""
+    pass
+

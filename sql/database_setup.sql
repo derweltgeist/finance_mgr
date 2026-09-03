@@ -1,13 +1,15 @@
 DROP TABLE IF EXISTS transactions;
 
 CREATE TABLE transactions (
-    id       INTEGER  PRIMARY KEY,
+    id       INTEGER  PRIMARY KEY AUTOINCREMENT,
     date     TEXT     DEFAULT CURRENT_DATE,
-    value    INTEGER,
-    admin    INTEGER,
+    value    REAL,
+    admin    REAL,
+    total    REAL,
     party    TEXT,
     category TEXT,
-    sender   TEXT,
-    receiver TEXT,
+    active   TEXT,
+    passive  TEXT,
+    pathway  TEXT,
     wallet   TEXT
 ) STRICT;

@@ -4,6 +4,7 @@
     To set up the configuration.
 '''
 
+import os
 import sys
 
 import sqlite3
@@ -12,17 +13,21 @@ from sqlite3 import Connection, Cursor
 from tomlkit.exceptions import ParseError
 from tomlkit import TOMLDocument
 
-def setup_db():
+from finance_mgr.error import InvalidDatabaseError
+
+def setup_db(nobackup: bool):
     '''Setup the database.'''
     while True:
-        confirm: str = input(
+        confirm_again: str = input(
             "> Do you wish to setup the database? Note that this will destroy old database! (Y/N) ")
-        if confirm.strip().lower() in ("yes", "y"):
+        if confirm_again.strip().lower() in ("yes", "y"):
             # Read the configs.
             try:
                 with open("config.toml", "r", encoding="utf-8") as f:
                     try:
-                        db_path: str = str(tomlkit.parse(f.read())["database"])
+                        config = tomlkit.parse(f.read())
+                        db_path: str = str(config["database"])
+                        db_arch: str = str(config["archive"])
                     except ParseError:
                         print(": Config file 'config.toml' contains invalid data.")
                         sys.exit(1)
@@ -35,13 +40,26 @@ def setup_db():
                 with open(db_path, "rb") as f:
                     old_db: bytes = f.read()
             except FileNotFoundError:
-                print(f": Database file '{db_path}' is not found.")
-                sys.exit(1)
+                raise InvalidDatabaseError("The database is not found.")
             print(": Connecting to the database...")
             # Connect to the database.
             conn: Connection = sqlite3.connect(db_path)
             cursor: Cursor   = conn.cursor()
             try:
+                if os.path.exists(db_arch) and not nobackup:
+                    while True:
+                        ask = input("> Backup file has existed, are you sure to overwrite the old backup file? (Y/N) ")
+                        if ask.lower() in ('y', 'yes'):
+                            print(": Overwriting the old backup file...")
+                            break
+                        elif ask.lower() in ('n', 'no'):
+                            print(": Cancelling...")
+                            sys.exit(0)
+                        else:
+                            print(": Invalid response! Repeating... aaa")
+                if not nobackup:
+                    with open(db_arch, "wb") as f:
+                        f.write(old_db)
                 print(": Writing to the database...")
                 with open("sql/database_setup.sql", "r", encoding="utf-8") as f:
                     cursor.executescript(f.read())
@@ -50,16 +68,16 @@ def setup_db():
                 break
             except KeyboardInterrupt:
                 print("\n: Reversing...")
-                with open(db_path, "wb", encoding="utf-8") as f:
+                with open(db_path, "wb") as f:
                     f.write(old_db)
                 break                   
-        elif confirm.strip().lower() in ("no", "n"):
+        elif confirm_again.strip().lower() in ("no", "n"):
             print(": Skipping...")
             break
         else:
-            print(": Invalid response! Repeating...") 
+            print(": Invalid response! Repeating... bbb")
 
-def setup(db_path: str) -> None:
+def setup(db_path: str, db_archive: str, nobackup: bool) -> None:
     '''python3 run.py setup'''
     print(": Initiating setup...")
     # Open or create TOMLDocument if the file does not exist.
@@ -69,6 +87,7 @@ def setup(db_path: str) -> None:
     except FileNotFoundError:
         doc: TOMLDocument = tomlkit.document()
     doc["database"] = db_path
+    doc["archive"]  = db_archive
     # Check if the user wishes.
     print("> Here is the config that you are about to apply:\n")
     print(tomlkit.dumps(doc).strip() + "\n")
@@ -92,7 +111,7 @@ def setup(db_path: str) -> None:
             print(": Skipping...")
             break
         else:
-            print(": Invalid response! Repeating...")
+            print(": Invalid response! Repeating... ccc")
     # Set up database as a clean sheet if the user wants.
-    setup_db()
+    setup_db(nobackup)
     print(": Finishing setup...")   

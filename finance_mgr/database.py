@@ -1,8 +1,5 @@
-import re
+import os
 import sys
-import calendar
-from datetime import datetime
-from datetime import date
 
 import tomlkit
 import sqlite3
@@ -10,12 +7,12 @@ from sqlite3 import Connection, Cursor
 from tomlkit import exceptions, TOMLDocument
 
 from finance_mgr.get import get
-from finance_mgr.error import (InvalidOrMissingConfig, InvalidCLIArgument, InvalidValueFlagsFormat,
-                               InvalidDateIndex, InvalidDatabaseShowFlags, InvalidDate)
+from finance_mgr.error import (InvalidOrMissingConfig, InvalidCLIArgument, InvalidDatabaseError)
 
-def reset() -> None:
+def reset(nobackup: bool) -> None:
     '''python3 run.py database reset'''
     # Read config first to get the db path.
+    print(": Reading configuration of the database...")
     try:
         with open("config.toml", "r", encoding="utf-8") as f:
             doc: TOMLDocument = tomlkit.parse(f.read())
@@ -26,6 +23,9 @@ def reset() -> None:
     except exceptions.NonExistentKey:
         raise InvalidOrMissingConfig("Missing database entry in config.toml.")
     # Connect to the database.
+    print(": Connecting to the database...")
+    if not os.path.exists(db_path):
+        raise InvalidDatabaseError("The database does not exist.")
     conn: Connection = sqlite3.connect(db_path)
     cursor: Cursor   = conn.cursor()
     while True:
@@ -33,7 +33,7 @@ def reset() -> None:
         if confirm.lower().strip() in ("y", "yes"):
             break
         elif confirm.lower().strip() in ("n", "no"):
-            print(": Canceling...")
+            print(": Cancelling...")
             sys.exit(0)
         else:
             print(": Invalid response! Repeating...")
@@ -43,26 +43,56 @@ def reset() -> None:
         old_db = f.read()
     # Perform reset.
     try:
+        while True:
+            ask: str = input(
+                f"> Are you sure to reset the database with backup = {not nobackup}? (Y/N) ")
+            if ask.lower() in ('y', 'yes'):
+                break
+            elif ask.lower() in ('n', 'no'):
+                print(": Cancelling...")
+            else:
+                print(": Invalid response! Repeating...")
         print(": Performing database reset, deleting all rows...")
         with open("sql/database_reset.sql", "r", encoding="utf-8") as f:
             try:
                 cursor.executescript(f.read())
             except sqlite3.OperationalError:
-                print(": Invalid database, table TRANSACTIONS does not exist.")
-                sys.exit(1)
+                raise InvalidDatabaseError(": Invalid database, table TRANSACTIONS does not exist.")
+        if not nobackup:
+            print(": Writing backup...")
+            # Read config first to get the db path.
+            try:
+                db_archive: str = str(doc["archive"])
+            except exceptions.NonExistentKey:
+                raise InvalidOrMissingConfig("Missing archive entry in config.toml.") 
+            if os.path.exists(db_archive):
+                while True:
+                    ask = input("> Backup file has existed, are you sure to overwrite the old backup file? (Y/N) ")
+                    if ask.lower() in ('y', 'yes'):
+                        print(": Overwriting the old backup file...")
+                        break
+                    elif ask.lower() in ('n', 'no'):
+                        print(": Cancelling...")
+                        sys.exit(0)
+                    else:
+                        print(": Invalid response! Repeating...")
+            with open(db_archive, "wb") as f:
+                f.write(old_db)           
         conn.commit()
         conn.close()
     except KeyboardInterrupt:
         print("\n: Reverting...")
         with open(db_path, "wb") as f:
             f.write(old_db)
+        sys.exit(0)
 
-def database(choice: str, range: dict[str, str]) -> None:
+def database(choice: str, verbose: bool, nobackup: bool, range: dict[str, str]) -> None:
     '''python3 run.py database ...'''
     if choice == "reset": # python3 run.py database reset
-        reset()
+        reset(nobackup)
     elif choice == "show": # python3 run.py database show [range]
-        get(range)
+        rows: list[sqlite3.Row] = get(range, verbose)
     else:
         raise InvalidCLIArgument(
             "Invalid CLI subcommand for command database: only reset and show are valid.")
+    print(": Finishing task...")

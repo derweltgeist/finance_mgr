@@ -1,3 +1,52 @@
 # My Shitty Finance Calculator
 
-Licensed in MIT License, xd.
+This is a finance calculator for budget tracking.
+
+## Features
+
+The calculator can keep transaction records, whose parties, the value of the mutations,
+admin fees, and three important features:
+- Sender: This does not describe the party, but this describes the institution (e.g. bank or e-money) that the sender uses.
+- Receiver: Same with sender. This describes the institution that the receiver uses to obtain the money.
+- Wallet: The "space" where transaction is conducted. This is useful if you want to seperate your funds into seperate wallet.
+- Category: The type of transactions, e.g. food, school fees, taxes, etc.
+
+Config is stored in ```./config.toml```, while database's default path is ```./database.db```. Use:
+
+```bash
+python3 run.py
+```
+
+To run the program. Make sure ```sql``` and ```finance_mgr``` folder exist.
+
+## Usages
+
+Here are the commands:
+- ```setup``` : Setup the entire project (config and/or database). Use ```--db``` flag to pass the database name to the config.
+- ```database``` : Reset or obtain data from the database. Use ```database reset``` to reset, and ```database show``` to obtain data.
+- ```sheet``` : Use this to import (```sheet import```) or export (```sheet export```) to spreadsheets (the only way to mutate data).
+- ```version``` : Use this to display version number. Use ```version --license``` to show what license.
+
+There are several flags you can use when executing ```database show``` and ```sheet export```. First, here are time flags.
+- ```--date``` : Use this flag when obtaining data to filter based on dates with format ```YYYY-MM-DD:yyyy-mm-dd``` (start and end range), use comma for multiple ranges (e.g. ```YYYY-MM-DD:yyyy-mm-dd,YYYY-MM-DD:yyyy-mm-dd,YYYY-MM-DD:yyyy-mm-dd```)
+- ```--yearmonth``` : Use this flag when obtaining data to filter based on dates, but this time with format ````YYYY-MM```
+- ```--monthday```  : Use this flag when obtaining data to filter based on dates, but this time with format ```MM-DD```
+- ```--year```      : Use this flag when obtaining data to filter based on dates, but this time with format ```YYYY```
+- ```--month```     : Use this flag when obtaining data to filter based on dates, but this time with format ```MM```
+- ```--day```       : Use this flag when obtaining data to filter based on dates, but this time with format ```DD```
+
+Here are value flags. All of them use the format of either ```x=number``` (for equivalence statements) or ```number[operator]x[operator]number``` or ```number[operator]x``` or ```x[operator]number``` (for non-equivalence statements, e.g. ```100<x<200```, you can use ```<```, ```>```, ```<=```, and ```>=```). You can use multiple ranges e.g. ```x=100,500<x<600,x>800```
+- ```--id```        : Use this flags when obtaining fata to filter based on IDs, which are incremental discrete integers.
+- ```--nvalue```    : Use this flag when obtaining data to filter based on nominal transaction values.
+- ```--tvalue```    : Use this flag when obtaining data to filter based on total transaction values (nominal + admin fee)
+- ```--admin```     : Use this flag when obtaining data to filter based on admin fees.
+
+Here are other flags. All of them are used to compare against active, passive wallet, party, pathway, and categories. Use comma to compare against multiple items e.g. ```apple,orange,grape```. All of the string must not contain whitespaces.
+- ```--category```  : Use this for categories.
+- ```--party```     : Use this for parties.
+- ```--wallet```    : Use this for wallets.
+- ```--pathway```   : Use this for pathways.
+- ```--active```    : Use this for active side.
+- ```--passive```   : Use this for the passive side.
+
+If you use ```--verbose``` for ```database show``` and ```sheet export```, the SQL command will be displayed before you confirm.

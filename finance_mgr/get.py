@@ -1,32 +1,56 @@
 import re
+import os
+import sys
 import calendar
 from datetime import datetime
 from datetime import date
 
-from finance_mgr.error import (InvalidValueFlagsFormat, InvalidDateIndex, InvalidDatabaseShowFlags, InvalidDate)
+import tomlkit
+import sqlite3
+import pandas as pd
+from sqlite3 import Connection, Cursor
+from tomlkit import exceptions, TOMLDocument
 
-def get(range: dict[str, str]) -> None:
+from finance_mgr.error import (InvalidValueFlagsFormat, InvalidDateIndex, InvalidDatabaseError,
+                               InvalidDatabaseShowFlags, InvalidDate, InvalidOrMissingConfig, InvalidGetArg)
+
+def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.Row]:
     '''Retrive data from the database.'''
-    query       : str  = ""                                   # Placeholders for queries.
-    fquery      : str  = "SELECT * from transactions WHERE\n" # This is the actual query that will be send with ? parameters.
-    dquery      : str  = "SELECT * from transactions WHERE\n" # This is for showcase of the query, not actual query (which may contain parameters)
+
+    query       : str  = "" # Placeholders for queries that will be cleared constantly.
+    fquery      : str  = "SELECT * FROM transactions" # This is the actual query that will be send with ? parameters.
+    dquery      : str  = "SELECT * FROM transactions" # This is for showcase of the query, not actual query (which may contain parameters)
     single      : bool = True # Check if only one flag is entered.
-    time_single : bool = True # Check if only one time is entered.
-    parameters  : list = []
+    parameters  : list = []   # Parameters for SQL query, only used for other flags (time and value flags are sanitized)
+    rows        : list[sqlite3.Row]  = [] # The actual result.
+
+    if not all(v is None for v in range.values()): # If no filter flags are provided do not inject WHERE.
+        fquery += " WHERE"
+        dquery += " WHERE"
+
+    fquery += "\n"
+    dquery += "\n"
+
     for arg, value in range.items():
-        if value is None:
+        # Treat the value first.
+        if value is None: # If the flag is empty, skip it.
             continue
         else:
             value = value.strip() # Strip value from any whitespace to clean it up.
+
+        # If we are not the first flag, we must append OR or AND to the start of our query.
         if single: # Single being true means only one parameter is inserted.
+            fquery += "    "
+            dquery += "    "
             single = False
-        else: # If there has been a flag entered before, insert AND.
+        else: # If there has been a flag entered before, insert AND or OR
             if arg in ("date", "yearmonth", "monthday", "year", "month", "day", "nvalue", "tvalue", "admin", "id"):
-                fquery += " OR "
+                fquery += " OR " # This is for time and value flags
                 dquery += " OR "
-            else:
+            else: # The other flags
                 fquery += "AND "
                 dquery += "AND "
+
         # ======================== TIME FLAGS
         if arg in ("date", "yearmonth", "monthday", "year", "month", "day"):
             time_data: list[str] = value.split(",") # List of ranges.
@@ -61,21 +85,15 @@ def get(range: dict[str, str]) -> None:
                     raise InvalidDateIndex("This is an internal error at show() of database.py, check your date index.")
             for ind, time in enumerate(time_data):
                 if time_rang: # If there has been a time range before, we insert OR.
-                    query += " OR (date BETWEEN "
+                    query += " OR (date BETWEEN " # If this is the first time range, do not insert OR.
                 else:
-                    if time_single: # But if this is the first time flag, we insert space. this is just for fancy formats.
-                        query += "    (date BETWEEN " # Add this.
-                        time_single = False
-                    else: # If this is not the first time flag, we do not insert space.
-                        query += "(date BETWEEN "
+                    query += "(date BETWEEN "
                 result = time.split(":") # Split into the start range and end range.
                 if len(result) != 2: # There can only be start and end.
                     raise InvalidDatabaseShowFlags(
                         f"Colon usage in --{arg} is invalid, check again.")
                 else:
                     start, end = result # Get the start range and end range.
-
-
 
                     # ------------------------- Check the start range.
                     start_split = start.split("-") # Split into units.
@@ -124,7 +142,6 @@ def get(range: dict[str, str]) -> None:
                         raise InvalidDate(f"Start date range {form_time} (index: {ind}) of --{arg} is invalid.")
                     form_time = "" # Reset it.
 
-
                     # ------------------------- Check the end range.
                     end_split = end.split("-")
                     if len(end_split) != length:
@@ -165,7 +182,7 @@ def get(range: dict[str, str]) -> None:
                         form_time += f"-12-{calendar.monthrange(int(end_split[0]), 12)[1]}"
                     elif arg == "month":
                         target_year = date.today().year
-                        target_month = date.today().month
+                        target_month = int(end_split[0])
                         form_time = f"{target_year}-" + form_time + "-" + str(calendar.monthrange(target_year, target_month)[1])
                     elif arg == "day":
                         form_time = f"{date.today().year}-{date.today().strftime('%m')}-" + form_time
@@ -176,21 +193,16 @@ def get(range: dict[str, str]) -> None:
                     except ValueError:
                         raise InvalidDate(f"End date range {form_time} (index: {ind}) of --{arg} is invalid.")
                     form_time = "" # Reset.
-
-
-
+                    # Add it to the query.
                     fquery += query
                     dquery += query
-                    query = ""      # Reset query.
+                    query = "" # Reset query.
         # ======================== VALUE FLAGS
         elif arg in ("nvalue", "tvalue", "id", "admin"):
-            if time_single: # But if this is the first time flag, we insert space. this is just for fancy formats.
-                query += f"    " # Add this.
-                time_single = False
             if arg == "nvalue":
                 edited_arg = "value"
             elif arg == "tvalue":
-                edited_arg = "(value + admin)"
+                edited_arg = "total"
             else:
                 edited_arg = arg
             ranges: list[str] = value.split(",")
@@ -242,7 +254,7 @@ def get(range: dict[str, str]) -> None:
                                         raise InvalidValueFlagsFormat(
                                         f"Non-equivalence statement index {ind} of --{arg} must have its operators aligned.")    
                         elif token == "x":
-                            token = edited_arg
+                            token = f"{edited_arg} AND {edited_arg}"
                         else:
                             if token_ind not in (0, 4):
                                 raise InvalidValueFlagsFormat(
@@ -279,19 +291,76 @@ def get(range: dict[str, str]) -> None:
             fquery += query
             query = ""
         # ======================== OTHER FLAGS
-        elif arg in ("party", "category", "sender", "receiver", "wallet"):
+        elif arg in ("party", "category", "active", "passive", "pathway", "wallet"):
             data: list[str] = value.split(",")
-            if time_single: # But if this is the first time flag, we insert space. this is just for fancy formats.
-                query += f"    ({arg} IN (" # Add this.
-                dquery += f"    ({arg} IN ("
-                time_single = False
-            else: # If this is not the first time flag, we do not insert space.
-                query += f"({arg} IN ("
-                dquery += f"({arg} IN ("
+            query += f"({arg} IN ("
+            dquery += f"({arg} IN ("
             query += ", ".join(["?"] * len(data)) + "))\n"
             fquery += query
             query = ""
             dquery += ", ".join(f"'{item}'" for item in data) + "))\n"
             parameters.append(data)
-    # print(query)
-    print(dquery)
+        else:
+            raise InvalidGetArg("Internal error: Invalid argument for get()")
+
+    # Execute the query.
+    while True:
+        if verbose:
+            print(": Here is the SQL statement that will be executed (actual SQL is parameterized and sanitizied)\n")
+            print(dquery)
+            confirm = input ("> Proceed? (Y/N) ")
+        else:
+            confirm = "y" # Auto-confirm.
+        if confirm.strip().lower() in ("yes", "y"):
+            # Reading configurations.
+            print(": Reading configuration of the database...")
+            try:
+                with open("config.toml", "r", encoding="utf-8") as f:
+                    doc: TOMLDocument = tomlkit.parse(f.read())
+            except FileNotFoundError:
+                raise InvalidOrMissingConfig("Missing config.toml in the root directory.")
+            try:
+                db_path: str = str(doc["database"])
+            except exceptions.NonExistentKey:
+                raise InvalidOrMissingConfig("Missing database entry in config.toml.")
+            print("Connecting to the database...")
+            if not os.path.exists(db_path):
+                raise InvalidDatabaseError("The database does not exist.")
+            try:
+                conn: Connection = sqlite3.connect(db_path)
+                if panda: # Directly write the rows the spreadsheet file.
+                    print(f": Exporting database rows to spreadsheet {panda}...")
+                    if os.path.exists(panda):
+                        while True:
+                            ask = input("> The spreadsheet file has already existed. Are you sure to overwrite? (Y/N) ")
+                            if ask.lower() in ('y', 'yes'):
+                                print(": Overwriting the old spreadsheet file...")
+                                break
+                            elif ask.lower() in ('n', 'no'):
+                                print(": Cancelling...")
+                                sys.exit(0)
+                            else:
+                                print(": Invalid response! Repeating...")
+                    df: pd.DataFrame = pd.read_sql_query(fquery, conn)
+                    df.to_excel(panda, sheet_name='sheet1', index=False)
+                    return []
+                else: # Obtain the data, just return.
+                    print(": Fetching database rows...")
+                    conn.row_factory = sqlite3.Row
+                    cursor: Cursor   = conn.cursor()
+                    cursor.execute(fquery, parameters)
+                    rows = cursor.fetchall()
+                conn.close()
+                break
+            except sqlite3.OperationalError:
+                raise InvalidDatabaseError(": Invalid database, table 'transactions' does not exist.")
+            except KeyboardInterrupt:
+                print("\n: Canceling...")    
+                sys.exit(0)       
+        elif confirm.strip().lower() in ("no", "n"):
+            print(": Skipping...")
+            sys.exit(0)
+        else:
+            print(": Invalid response! Repeating...")
+    print(rows)
+    return rows
