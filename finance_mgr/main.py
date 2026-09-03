@@ -48,17 +48,17 @@ help="import and export. For import, the only flag is --overwrite, the rest of t
         self.__subparser_sheet.add_argument("sheet", type=str, help="Path of the sheet file.")
 
         self.__subparser_sheet.add_argument("--date", "-date", "-fd", "--fd", type=str,
-            help="For export - Time range: Pass date range. Format can be YYYY-MM-DD:YYYY-MM-DD. Use two digits for months & days e.g. 1999-12-01:2005-05-03. Use , for multiple ranges.")
+            help="For export - Time range: Pass date range. Format can be YYYY-MM-DD:YYYY-MM-DD. Use two digits for months & days e.g. 1999-12-01:2005-05-03. Use , for multiple ranges. Hour is assumed to be midnight.")
         self.__subparser_sheet.add_argument("--yearmonth", "-yearmonth", "--ym", "-ym", type=str,
-            help="For export - Time range: Pass year-month range. Format can be YYYY-MM:YYYY-MM. Use two digits for months e.g. 2008-12:2012-01. Use , for multiple ranges.")
+            help="For export - Time range: Pass year-month range. Format can be YYYY-MM:YYYY-MM. Use two digits for months e.g. 2008-12:2012-01. Use , for multiple ranges. Hour is assumed to be midnight.")
         self.__subparser_sheet.add_argument("--monthday", "-monthday", "--md", "-md", type=str,
-            help="For export - Time range: Pass month-day range within this year. Format is MM-DD:MM-DD. Use two digits e.g. 10-01:06-30. Use , for multiple ranges.")        
+            help="For export - Time range: Pass month-day range within this year. Format is MM-DD:MM-DD. Use two digits e.g. 10-01:06-30. Use , for multiple ranges. Hour is assumed to be midnight.")        
         self.__subparser_sheet.add_argument("--year", "-year", "--y", "-y", type=str,
-            help="For export - Time range: Pass year range. Format is YYYY:YYYY. Use two digits e.g. 2008 or 1999. Use , for multiple ranges.") 
+            help="For export - Time range: Pass year range. Format is YYYY:YYYY. Use two digits e.g. 2008 or 1999. Use , for multiple ranges. Hour is assumed to be midnight.") 
         self.__subparser_sheet.add_argument("--month", "-month", "--m", "-m", type=str,
-            help="For export - Time range: Pass month range within this year. Format is MM:MM. Use two digits e.g. 01 or 12. Use , for multiple ranges.") 
+            help="For export - Time range: Pass month range within this year. Format is MM:MM. Use two digits e.g. 01 or 12. Use , for multiple ranges. Hour is assumed to be midnight.") 
         self.__subparser_sheet.add_argument("--day", "-day", "--d", "-d", type=str,
-            help="For export - Time range: Pass day range within this day. Format is DD:DD. Use two digits e.g. 08 or 27. Use , for multiple ranges.")
+            help="For export - Time range: Pass day range within this day. Format is DD:DD. Use two digits e.g. 08 or 27. Use , for multiple ranges. Hour is assumed to be midnight.")
 
         # value
         self.__subparser_sheet.add_argument("--id", "-id", type=str,
@@ -98,23 +98,23 @@ help="For export - Filter based on the value of admin fee. Use <, <=, >, >=, =, 
         # python3 run.py database [choice: reset, show] [show: reset]
         self.__subparser_database = self.__subparser_mgr.add_parser("database", help="Manage database.")
         self.__subparser_database.add_argument("choice", type=str,
-            help="reset or show. When showing, if you do not use flags below the default is today's all transactions.")
+            help="reset or show. When showing, if you do not use flags below the default is all transactions.")
         
         # Who hates awesome filtration system.
     
         # time flags, only one can be used.
         self.__subparser_database.add_argument("--date", "-date", "-fd", "--fd", type=str,
-            help="Time range: Pass date range. Format can be YYYY-MM-DD:YYYY-MM-DD. Use two digits for months & days e.g. 1999-12-01:2005-05-03. Use , for multiple ranges.")
+            help="Time range: Pass date range. Format can be YYYY-MM-DD:YYYY-MM-DD. Use two digits for months & days e.g. 1999-12-01:2005-05-03. Use , for multiple ranges. Hour is assumed to be midnight.")
         self.__subparser_database.add_argument("--yearmonth", "-yearmonth", "--ym", "-ym", type=str,
-            help="Time range: Pass year-month range. Format can be YYYY-MM:YYYY-MM. Use two digits for months e.g. 2008-12:2012-01. Use , for multiple ranges.")
+            help="Time range: Pass year-month range. Format can be YYYY-MM:YYYY-MM. Use two digits for months e.g. 2008-12:2012-01. Use , for multiple ranges. Hour is assumed to be midnight.")
         self.__subparser_database.add_argument("--monthday", "-monthday", "--md", "-md", type=str,
-            help="Time range: Pass month-day range within this year. Format is MM-DD:MM-DD. Use two digits e.g. 10-01:06-30. Use , for multiple ranges.")        
+            help="Time range: Pass month-day range within this year. Format is MM-DD:MM-DD. Use two digits e.g. 10-01:06-30. Use , for multiple ranges. Hour is assumed to be midnight.")        
         self.__subparser_database.add_argument("--year", "-year", "--y", "-y", type=str,
-            help="Time range: Pass year range. Format is YYYY:YYYY. Use two digits e.g. 2008 or 1999. Use , for multiple ranges.") 
+            help="Time range: Pass year range. Format is YYYY:YYYY. Use two digits e.g. 2008 or 1999. Use , for multiple ranges. Hour is assumed to be midnight.") 
         self.__subparser_database.add_argument("--month", "-month", "--m", "-m", type=str,
-            help="Time range: Pass month range within this year. Format is MM:MM. Use two digits e.g. 01 or 12. Use , for multiple ranges.") 
+            help="Time range: Pass month range within this year. Format is MM:MM. Use two digits e.g. 01 or 12. Use , for multiple ranges. Hour is assumed to be midnight.") 
         self.__subparser_database.add_argument("--day", "-day", "--d", "-d", type=str,
-            help="Time range: Pass day range within this day. Format is DD:DD. Use two digits e.g. 08 or 27. Use , for multiple ranges.")
+            help="Time range: Pass day range within this day. Format is DD:DD. Use two digits e.g. 08 or 27. Use , for multiple ranges. Hour is assumed to be midnight.")
 
         # value
         self.__subparser_database.add_argument("--id", "-id", type=str,

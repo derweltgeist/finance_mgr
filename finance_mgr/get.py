@@ -299,7 +299,7 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
             fquery += query
             query = ""
             dquery += ", ".join(f"'{item}'" for item in data) + "))\n"
-            parameters.append(data)
+            parameters.extend(data)
         else:
             raise InvalidGetArg("Internal error: Invalid argument for get()")
 
@@ -341,7 +341,7 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                                 sys.exit(0)
                             else:
                                 print(": Invalid response! Repeating...")
-                    df: pd.DataFrame = pd.read_sql_query(fquery, conn)
+                    df: pd.DataFrame = pd.read_sql_query(fquery, conn, params=parameters)
                     df.to_excel(panda, sheet_name='sheet1', index=False)
                     return []
                 else: # Obtain the data, just return.
