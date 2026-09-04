@@ -3,6 +3,7 @@ import sys
 
 import tomlkit
 import sqlite3
+from tabulate import tabulate
 from sqlite3 import Connection, Cursor
 from tomlkit import exceptions, TOMLDocument
 
@@ -92,6 +93,8 @@ def database(choice: str, verbose: bool, nobackup: bool, range: dict[str, str]) 
         reset(nobackup)
     elif choice == "show": # python3 run.py database show [range]
         rows: list[sqlite3.Row] = get(range, verbose)
+        headers = ['id', 'date', 'value', 'admin', 'total', 'party', 'category', 'active', 'passive', 'pathway', 'wallet']
+        print(tabulate(rows, headers=headers, tablefmt="fancy_grid"))
     else:
         raise InvalidCLIArgument(
             "Invalid CLI subcommand for command database: only reset and show are valid.")

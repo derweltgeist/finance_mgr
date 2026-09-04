@@ -362,5 +362,4 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
             sys.exit(0)
         else:
             print(": Invalid response! Repeating...")
-    print(rows)
     return rows
