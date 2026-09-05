@@ -22,12 +22,13 @@ To run the program, make sure ```sql``` and ```finance_mgr``` folder exist.
 ## Usages
 
 Here are the commands:
-- ```setup``` : Setup the entire project (config and/or database). Use ```--db``` and ```--archive``` flag to pass the database name and archive database name to the config respectively.
+- ```setup```    : Setup the entire project (config and/or database). Use ```--db``` and ```--archive``` flag to pass the database name and archive database name to the config respectively.
 - ```database``` : Reset or obtain data from the database. Use ```database reset``` to reset, and ```database show``` to obtain data.
-- ```sheet``` : Use this to import (```sheet import```) or export (```sheet export```) to spreadsheets (the only way to mutate data).
-- ```version``` : Use this to display version number. Use ```version --license``` to show what license.
+- ```sheet```    : Use this to import (```sheet import```) or export (```sheet export```) to spreadsheets (the only way to mutate data).
+- ```graph```    : Display it within a graph. Use ```graph time``` to plot it against time (line graph), and ```graph [party, category, active, passive, wallet]``` to ploit against those classifications (bar chart). Use ```--noadmin``` to not include admin fees and ```--adminfee``` to show seperate graph of admin fees. If both flags are used you get a seperated graph of nominal value and admin fee.
+- ```version```  : Use this to display version number. Use ```version --license``` to show what license.
 
-There are several flags you can use when executing ```database show``` and ```sheet export```. First, here are time flags.
+There are several flags you can use when executing ```database show```, ```graph```, and ```sheet export```. First, here are time flags.
 - ```--date``` : Use this flag when obtaining data to filter based on dates with format ```YYYY-MM-DD:yyyy-mm-dd``` (start and end range), use comma for multiple ranges (e.g. ```YYYY-MM-DD:yyyy-mm-dd,YYYY-MM-DD:yyyy-mm-dd,YYYY-MM-DD:yyyy-mm-dd```)
 - ```--yearmonth``` : Use this flag when obtaining data to filter based on dates, but this time with format ````YYYY-MM```
 - ```--monthday```  : Use this flag when obtaining data to filter based on dates, but this time with format ```MM-DD```
@@ -50,7 +51,7 @@ Here are other flags. All of them are used to compare against active, passive wa
 - ```--passive```   : Use this for the passive side.
 
 There are several useful flags:
-- ```--verbose``` for ```database show``` and ```sheet export```, the SQL command will be displayed before you confirm.
+- ```--verbose``` for ```database show```, ```graph```, and ```sheet export```, the SQL command will be displayed before you confirm.
 - ```--overwrite``` for ```sheet import```, the data will overwrite instead of be appended.
 - ```--nobackup``` for ```setup```, ```sheet import```, and ```database reset```, backup database will not be created.
 - ```--summary``` for ```database show``` to generate only the summary (table is not generated).

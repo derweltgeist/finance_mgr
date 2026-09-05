@@ -11,7 +11,7 @@ import pandas as pd
 from sqlite3 import Connection, Cursor
 from tomlkit import exceptions, TOMLDocument
 
-from finance_mgr.error import (InvalidValueFlagsFormat, InvalidDateIndex, InvalidDatabaseError,
+from src.error import (InvalidValueFlagsFormat, InvalidDateIndex, InvalidDatabaseError,
                                InvalidDatabaseShowFlags, InvalidDate, InvalidOrMissingConfig, InvalidGetArg)
 
 def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.Row]:
@@ -23,6 +23,8 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
     single      : bool = True # Check if only one flag is entered.
     parameters  : list = []   # Parameters for SQL query, only used for other flags (time and value flags are sanitized)
     rows        : list[sqlite3.Row]  = [] # The actual result.
+
+    no_nonexempt: bool = True
 
     exempt_other : dict[str, list[str]] = {
         "party"    : [],
@@ -95,12 +97,12 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
             for ind, time in enumerate(time_data):
                 if time == "":
                     raise InvalidDate(f"Invalid data, there is an empty range at index {ind}")
-                print(time)
                 if time[0] == "!":
                     time = time[1:]
                     exempt: bool = True
                 else:
                     exempt: bool = False
+                    no_nonexempt = False
                 if time_rang: # If there has been a time range before, we insert OR.
                     if exempt:
                         query += " OR (date NOT BETWEEN " # If this is the first time range, do not insert OR.
@@ -236,6 +238,7 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                     exempt = True
                 else:
                     exempt = False
+                    no_nonexempt = False
                 if not first_range:
                     if exempt:
                         query += "NOT ("
@@ -332,7 +335,11 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
             # 2. Re-assign the original list to only keep items that DO NOT start with '!'
             data = [item for item in data if not item.startswith("!")]
             if data == []:
+                fquery = fquery[:-9] # remove the indentation since well... there is no data!
+                dquery = dquery[:-9]
                 continue
+            else:
+                no_nonexempt = False
             query += f"({arg} IN ("
             dquery += f"({arg} IN ("
             query += ", ".join(["?"] * len(data)) + "))\n"
@@ -347,13 +354,9 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
     for arg, data in exempt_other.items():
             if data == []:
                 continue
-            print("uhh")
-            print(f"'{fquery}'")
-            if fquery == "SELECT * FROM transactions WHERE\n         ":
-                print("test")
+            if no_nonexempt: # indicating there are no non-exempt queries
                 fquery = fquery[:33]
                 dquery = dquery[:33]
-                print(f"'{fquery}'")
                 query += f"         ({arg} NOT IN ("
                 dquery += f"        ({arg} NOT IN ("
             else:
@@ -415,7 +418,7 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                 conn.close()
                 break
             except sqlite3.OperationalError:
-                raise InvalidDatabaseError(": Invalid database, table 'transactions' does not exist.")
+                raise InvalidDatabaseError(": Invalid database, table 'transactions' does not exist, is invalid, or there is a bug.")
             except KeyboardInterrupt:
                 print("\n: Canceling...")    
                 sys.exit(0)       

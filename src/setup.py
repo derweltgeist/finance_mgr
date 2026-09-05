@@ -13,7 +13,7 @@ from sqlite3 import Connection, Cursor
 from tomlkit.exceptions import ParseError
 from tomlkit import TOMLDocument
 
-from finance_mgr.error import InvalidDatabaseError
+from src.error import InvalidDatabaseError
 
 def setup_db(nobackup: bool):
     '''Setup the database.'''

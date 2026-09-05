@@ -7,11 +7,12 @@
 import sys
 import argparse
 
-from finance_mgr.setup import setup
-from finance_mgr.sheet import sheet
-from finance_mgr.database import database
+from src.setup import setup
+from src.sheet import sheet
+from src.database import database
+from src.graph import graph
 
-from finance_mgr.error import InvalidCLIArgument
+from src.error import InvalidCLIArgument
 
 class Main:
     '''Main file.'''
@@ -147,6 +148,55 @@ help="Filter based on the value of admin fee. Use <, <=, >, >=, =, K or k for th
         self.__subparser_database.add_argument("--summary", "-summary", "--sum", "-sum", action="store_true",
                                                help="Only show the summary (minus the table).")
 
+        # python3 run.py graph [choice: time, party, category, active, passive, wallet] (flags)
+        self.__subparser_graph = self.__subparser_mgr.add_parser("graph",
+            help="Utilize matplotlib to plot and draw a chart.")
+        self.__subparser_graph.add_argument("choice", type=str, help="pie chart (party, category, active, passive, and wallet) or line chart (time). You can use filtration flags.")
+
+        self.__subparser_graph.add_argument("--date", "-date", "-fd", "--fd", type=str,
+            help="For export - Time range: Pass date range. Format can be YYYY-MM-DD:YYYY-MM-DD. Use two digits for months & days e.g. 1999-12-01:2005-05-03. Use , for multiple ranges. Hour is assumed to be midnight.")
+        self.__subparser_graph.add_argument("--yearmonth", "-yearmonth", "--ym", "-ym", type=str,
+            help="For export - Time range: Pass year-month range. Format can be YYYY-MM:YYYY-MM. Use two digits for months e.g. 2008-12:2012-01. Use , for multiple ranges. Hour is assumed to be midnight.")
+        self.__subparser_graph.add_argument("--monthday", "-monthday", "--md", "-md", type=str,
+            help="For export - Time range: Pass month-day range within this year. Format is MM-DD:MM-DD. Use two digits e.g. 10-01:06-30. Use , for multiple ranges. Hour is assumed to be midnight.")        
+        self.__subparser_graph.add_argument("--year", "-year", "--y", "-y", type=str,
+            help="For export - Time range: Pass year range. Format is YYYY:YYYY. Use two digits e.g. 2008 or 1999. Use , for multiple ranges. Hour is assumed to be midnight.") 
+        self.__subparser_graph.add_argument("--month", "-month", "--m", "-m", type=str,
+            help="For export - Time range: Pass month range within this year. Format is MM:MM. Use two digits e.g. 01 or 12. Use , for multiple ranges. Hour is assumed to be midnight.") 
+        self.__subparser_graph.add_argument("--day", "-day", "--d", "-d", type=str,
+            help="For export - Time range: Pass day range within this day. Format is DD:DD. Use two digits e.g. 08 or 27. Use , for multiple ranges. Hour is assumed to be midnight.")
+
+        # value
+        self.__subparser_graph.add_argument("--id", "-id", type=str,
+help="For export - Filter based on the id. Use <, <=, >, >=, K or k for thousand, H or h for hundred, comma for seperator of ranges, and x for the var. Example: x<500, x<600,x>500")
+        self.__subparser_graph.add_argument("--nvalue", "-nvalue", "--nv", "-nv", type=str,
+help="For export - Filter based on nominal value of the transactions. Use <, <=, >, >=, =, K or k for thousand, H or h for hundred., comma for seperator of ranges, and x for the var. Example: x<500, x<600,x>500")
+        self.__subparser_graph.add_argument("--tvalue", "-tvalue", "--tv", "-tv", type=str,
+help="For export - Filter based on total value of the transactions. Use <, <=, >, >=, =, K or k for thousand, H or h for hundred, comma for seperator of ranges, and x for the var. Example: x<500, x<600,x>500")
+        self.__subparser_graph.add_argument("--admin", "-admin", "--ad", "-ad", type=str,
+help="For export - Filter based on the value of admin fee. Use <, <=, >, >=, =, K or k for thousand, H or h for hundred, comma for seperator of ranges, and x for the var. Example: x<500, x<600,x>500")
+
+        # others
+        self.__subparser_graph.add_argument("--party", "-party", "--p", "-p", type=str,
+            help="For export - Filter based on parties. Format: x,y,z (without space)")
+        self.__subparser_graph.add_argument("--category", "-category", "--c", "-c", type=str,
+            help="For export - Filter based on categories. Format: x,y,z (without space)")
+        self.__subparser_graph.add_argument("--active", "-active", "--as", "-as", type=str,
+            help="For export - Filter based on the active side. Format: x,y,z (without space)")
+        self.__subparser_graph.add_argument("--passive", "-passive", "--ps", "-ps", type=str,
+            help="For export - Filter based on the passive side. Format: x,y,z (without space)")
+        self.__subparser_graph.add_argument("--pathway", "-pathway", "--pw", "-pw", type=str,
+            help="Filter based on pathway. Format: x,y,z (without space)")
+        self.__subparser_graph.add_argument("--wallet", "-wallet", "--w", "-w", type=str,
+            help="For export - Filter based on wallet. Format: x,y,z (without space)")
+
+        self.__subparser_graph.add_argument("--verbose", "-verbose", "--v", "-v", action="store_true",
+                                               help="Display SQL before execution.")
+        self.__subparser_graph.add_argument("--noadmin", "-noadmin", "--na", "-na", action="store_true",
+                                               help="Do not include admin fees.")
+        self.__subparser_graph.add_argument("--adminfee", "-adminfee", "--af", "-af", action="store_true",
+                                               help="Show seperate graph of admin fees.")
+
         # Finalize parser.
         self.__args = self.__parser.parse_args()
 
@@ -177,6 +227,25 @@ help="Filter based on the value of admin fee. Use <, <=, >, >=, =, K or k for th
             })
         elif self.__OPTION == "database": # python3 run.py database
             database(self.__args.choice, self.__args.verbose, self.__args.nobackup, self.__args.summary, {
+                "date"      : self.__args.date,
+                "yearmonth" : self.__args.yearmonth,
+                "monthday"  : self.__args.monthday,
+                "year"      : self.__args.year,
+                "month"     : self.__args.month,
+                "day"       : self.__args.day,
+                "id"        : self.__args.id,
+                "party"     : self.__args.party,
+                "category"  : self.__args.category,
+                "active"    : self.__args.active,
+                "passive"   : self.__args.passive,
+                "pathway"   : self.__args.pathway,
+                "wallet"    : self.__args.wallet,
+                "nvalue"    : self.__args.nvalue,
+                "tvalue"    : self.__args.tvalue,
+                "admin"     : self.__args.admin
+            })
+        elif self.__OPTION == "graph": # python3 run.py database
+            graph(self.__args.choice, self.__args.verbose, self.__args.noadmin, self.__args.adminfee, {
                 "date"      : self.__args.date,
                 "yearmonth" : self.__args.yearmonth,
                 "monthday"  : self.__args.monthday,

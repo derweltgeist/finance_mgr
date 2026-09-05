@@ -8,9 +8,9 @@ from tabulate import tabulate
 from sqlite3 import Connection, Cursor
 from tomlkit import exceptions, TOMLDocument
 
-from finance_mgr.get import get
-from finance_mgr.other import rupiah
-from finance_mgr.error import (InvalidOrMissingConfig, InvalidCLIArgument, InvalidDatabaseError)
+from src.get import get
+from src.other import rupiah
+from src.error import (InvalidOrMissingConfig, InvalidCLIArgument, InvalidDatabaseError)
 
 def reset(nobackup: bool) -> None:
     '''python3 run.py database reset'''
@@ -108,8 +108,12 @@ def database(choice: str, verbose: bool, nobackup: bool, summary: bool, range: d
         total_sum = sum(values)
         print(f"Total number of rows  : {total_rows} transactions.")
         print(f"Sum of transactions   : {rupiah(total_sum)}")
-        print(f"Average transactions  : {rupiah(total_sum/total_rows)}")
-        print(f"Stdev of transactions : {statistics.stdev(values)}")
+        if len(values) == 0:
+            print(f"Average transactions  : Invalid.")
+            print(f"Stdev of transactions : Invalid.")
+        else:
+            print(f"Average transactions  : {rupiah(total_sum/total_rows)}")
+            print(f"Stdev of transactions : {statistics.stdev(values)}")
         print(f"Range of transactions : {rupiah(max(values, default=0) - min(values, default=0))}")
         print("")
         print("* Admin fees are included.")

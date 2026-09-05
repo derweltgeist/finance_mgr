@@ -222,4 +222,5 @@ __marimo__/
 # Filter default DB and excel files.
 *.db
 *.xlsx
+*.Identifier
 /test.py

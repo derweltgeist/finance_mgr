@@ -8,8 +8,8 @@ from pandas import DataFrame
 from sqlite3 import Connection, Cursor
 from tomlkit import exceptions, TOMLDocument
 
-from finance_mgr.get import get
-from finance_mgr.error import (InvalidCLIArgument, InvalidOrMissingConfig, InvalidSheetContent,
+from src.get import get
+from src.error import (InvalidCLIArgument, InvalidOrMissingConfig, InvalidSheetContent,
                                InvalidDatabaseError, InvalidSheetFilePath)
 
 SHEET_TAB: str = "Mutation"

@@ -1,3 +1,3 @@
-from finance_mgr.main import Main
+from src.main import Main
 
 Main()
