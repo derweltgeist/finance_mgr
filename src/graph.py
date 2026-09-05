@@ -8,6 +8,7 @@ from matplotlib.ticker import FuncFormatter
 from matplotlib.patches import Patch
 
 from src.get import get
+from src.error import InvalidCLIArgument
 
 def graph(choice: str, verbose: bool, noadmin: bool, adminfee: bool, range: dict[str, str]):
     rows: list[sqlite3.Row] = get(range, verbose)
@@ -154,7 +155,8 @@ def graph(choice: str, verbose: bool, noadmin: bool, adminfee: bool, range: dict
                 Patch(facecolor="#682196", label="Admin Fees")
             ]            
         ax.legend(handles=legend_elements, frameon=True, loc="upper right")
-
+    else:
+        raise InvalidCLIArgument("run.py graph only accepts time, category, party, active, passive, and wallet.")
     # 4. Adjust layout and display the chart
     plt.tight_layout()
     plt.show()
