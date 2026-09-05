@@ -22,7 +22,7 @@ To run the program, make sure ```sql``` and ```finance_mgr``` folder exist.
 ## Usages
 
 Here are the commands:
-- ```setup``` : Setup the entire project (config and/or database). Use ```--db``` flag to pass the database name to the config.
+- ```setup``` : Setup the entire project (config and/or database). Use ```--db``` and ```--archive``` flag to pass the database name and archive database name to the config respectively.
 - ```database``` : Reset or obtain data from the database. Use ```database reset``` to reset, and ```database show``` to obtain data.
 - ```sheet``` : Use this to import (```sheet import```) or export (```sheet export```) to spreadsheets (the only way to mutate data).
 - ```version``` : Use this to display version number. Use ```version --license``` to show what license.
@@ -49,4 +49,8 @@ Here are other flags. All of them are used to compare against active, passive wa
 - ```--active```    : Use this for active side.
 - ```--passive```   : Use this for the passive side.
 
-If you use ```--verbose``` for ```database show``` and ```sheet export```, the SQL command will be displayed before you confirm.
+There are several useful flags:
+- ```--verbose``` for ```database show``` and ```sheet export```, the SQL command will be displayed before you confirm.
+- ```--overwrite``` for ```sheet import```, the data will overwrite instead of be appended.
+- ```--nobackup``` for ```setup```, ```sheet import```, and ```database reset```, backup database will not be created.
+- ```--summary``` for ```database show``` to generate only the summary (table is not generated).

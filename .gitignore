@@ -219,9 +219,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Filter default DB files.
-/database.db
-/archive.db
-/sheet.xlsx
-/another.xlsx
+# Filter default DB and excel files.
+*.db
+*.xlsx
 /test.py

@@ -24,6 +24,15 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
     parameters  : list = []   # Parameters for SQL query, only used for other flags (time and value flags are sanitized)
     rows        : list[sqlite3.Row]  = [] # The actual result.
 
+    exempt_other : dict[str, list[str]] = {
+        "party"    : [],
+        "category" : [],
+        "active"   : [],
+        "passive"  : [],
+        "pathway"  : [],
+        "wallet"   : []
+    }
+
     if not all(v is None for v in range.values()): # If no filter flags are provided do not inject WHERE.
         fquery += " WHERE"
         dquery += " WHERE"
@@ -40,16 +49,16 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
 
         # If we are not the first flag, we must append OR or AND to the start of our query.
         if single: # Single being true means only one parameter is inserted.
-            fquery += "    "
-            dquery += "    "
+            fquery += "         "
+            dquery += "         "
             single = False
         else: # If there has been a flag entered before, insert AND or OR
             if arg in ("date", "yearmonth", "monthday", "year", "month", "day", "nvalue", "tvalue", "admin", "id"):
-                fquery += " OR " # This is for time and value flags
-                dquery += " OR "
+                fquery += "      OR " # This is for time and value flags
+                dquery += "      OR "
             else: # The other flags
-                fquery += "AND "
-                dquery += "AND "
+                fquery += "     AND "
+                dquery += "     AND "
 
         # ======================== TIME FLAGS
         if arg in ("date", "yearmonth", "monthday", "year", "month", "day"):
@@ -84,10 +93,24 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                 case _:
                     raise InvalidDateIndex("This is an internal error at show() of database.py, check your date index.")
             for ind, time in enumerate(time_data):
-                if time_rang: # If there has been a time range before, we insert OR.
-                    query += " OR (date BETWEEN " # If this is the first time range, do not insert OR.
+                if time == "":
+                    raise InvalidDate(f"Invalid data, there is an empty range at index {ind}")
+                print(time)
+                if time[0] == "!":
+                    time = time[1:]
+                    exempt: bool = True
                 else:
-                    query += "(date BETWEEN "
+                    exempt: bool = False
+                if time_rang: # If there has been a time range before, we insert OR.
+                    if exempt:
+                        query += " OR (date NOT BETWEEN " # If this is the first time range, do not insert OR.
+                    else:
+                        query += " OR (date BETWEEN"
+                else:
+                    if exempt:
+                        query += "(date NOT BETWEEN "
+                    else:
+                        query += "(date BETWEEN"
                 result = time.split(":") # Split into the start range and end range.
                 if len(result) != 2: # There can only be start and end.
                     raise InvalidDatabaseShowFlags(
@@ -208,11 +231,22 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
             ranges: list[str] = value.split(",")
             first_range: bool = False
             for ind, r in enumerate(ranges):
+                if r[0] == "!":
+                    r = r[1:]
+                    exempt = True
+                else:
+                    exempt = False
                 if not first_range:
-                    query += "("
+                    if exempt:
+                        query += "NOT ("
+                    else:
+                        query += "("
                     first_range = True
                 else:
-                    query += " OR ("
+                    if exempt:
+                        query += "      OR NOT ("
+                    else:
+                        query += "      OR ("
                 equivalence: list[str] = re.split(r'(?<![<=>])=(?![<=>])', r)
                 equivalence = [item for item in equivalence if item] # Purge from empty strings.
                 if len(equivalence) == 2: # Simple equivalence statements.
@@ -293,6 +327,12 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
         # ======================== OTHER FLAGS
         elif arg in ("party", "category", "active", "passive", "pathway", "wallet"):
             data: list[str] = value.split(",")
+            # 1. Grab the items (stripping the '!') and store them in another variable
+            exempt_other[arg] = [item[1:] for item in data if item.startswith("!")]
+            # 2. Re-assign the original list to only keep items that DO NOT start with '!'
+            data = [item for item in data if not item.startswith("!")]
+            if data == []:
+                continue
             query += f"({arg} IN ("
             dquery += f"({arg} IN ("
             query += ", ".join(["?"] * len(data)) + "))\n"
@@ -302,6 +342,28 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
             parameters.extend(data)
         else:
             raise InvalidGetArg("Internal error: Invalid argument for get()")
+
+    # Add those that are exempted, only for other flags.
+    for arg, data in exempt_other.items():
+            if data == []:
+                continue
+            print("uhh")
+            print(f"'{fquery}'")
+            if fquery == "SELECT * FROM transactions WHERE\n         ":
+                print("test")
+                fquery = fquery[:33]
+                dquery = dquery[:33]
+                print(f"'{fquery}'")
+                query += f"         ({arg} NOT IN ("
+                dquery += f"        ({arg} NOT IN ("
+            else:
+                query += f"    AND ({arg} NOT IN ("
+                dquery += f"     AND ({arg} NOT IN ("
+            query += ", ".join(["?"] * len(data)) + "))\n"
+            fquery += query
+            query = ""
+            dquery += ", ".join(f"'{item}'" for item in data) + "))\n"
+            parameters.extend(data)
 
     # Execute the query.
     while True:
@@ -323,7 +385,7 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                 db_path: str = str(doc["database"])
             except exceptions.NonExistentKey:
                 raise InvalidOrMissingConfig("Missing database entry in config.toml.")
-            print("Connecting to the database...")
+            print(": Connecting to the database...")
             if not os.path.exists(db_path):
                 raise InvalidDatabaseError("The database does not exist.")
             try:

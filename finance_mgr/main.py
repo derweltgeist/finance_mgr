@@ -98,7 +98,7 @@ help="For export - Filter based on the value of admin fee. Use <, <=, >, >=, =, 
         # python3 run.py database [choice: reset, show] [show: reset]
         self.__subparser_database = self.__subparser_mgr.add_parser("database", help="Manage database.")
         self.__subparser_database.add_argument("choice", type=str,
-            help="reset or show. When showing, if you do not use flags below the default is all transactions.")
+            help="reset or show. When showing, if you do not use flags below the default is all transactions. --summary is only for show. Use ! at the start of the range for exclusion.")
         
         # Who hates awesome filtration system.
     
@@ -144,6 +144,8 @@ help="Filter based on the value of admin fee. Use <, <=, >, >=, =, K or k for th
                                                help="Display SQL before execution.")
         self.__subparser_database.add_argument("--nobackup", "-nobackup", "--nb", "-nb", action="store_true",
                                                help="Do not backup the file. Default is false.")
+        self.__subparser_database.add_argument("--summary", "-summary", "--sum", "-sum", action="store_true",
+                                               help="Only show the summary (minus the table).")
 
         # Finalize parser.
         self.__args = self.__parser.parse_args()
@@ -174,7 +176,7 @@ help="Filter based on the value of admin fee. Use <, <=, >, >=, =, K or k for th
                 "admin"     : self.__args.admin
             })
         elif self.__OPTION == "database": # python3 run.py database
-            database(self.__args.choice, self.__args.verbose, self.__args.nobackup, {
+            database(self.__args.choice, self.__args.verbose, self.__args.nobackup, self.__args.summary, {
                 "date"      : self.__args.date,
                 "yearmonth" : self.__args.yearmonth,
                 "monthday"  : self.__args.monthday,

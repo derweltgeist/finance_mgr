@@ -74,6 +74,7 @@ def sheet(choice: str, sheet: str, verbose: bool, overwrite: bool, nobackup: boo
                     break
                 elif ask.lower() in ('n', 'no'):
                     print(": Cancelling...")
+                    sys.exit(0)
                 else:
                     print(": Invalid response! Repeating...")
             print(": Beginning to import the spreadsheet to the database...")

@@ -3,11 +3,13 @@ import sys
 
 import tomlkit
 import sqlite3
+import statistics
 from tabulate import tabulate
 from sqlite3 import Connection, Cursor
 from tomlkit import exceptions, TOMLDocument
 
 from finance_mgr.get import get
+from finance_mgr.other import rupiah
 from finance_mgr.error import (InvalidOrMissingConfig, InvalidCLIArgument, InvalidDatabaseError)
 
 def reset(nobackup: bool) -> None:
@@ -87,14 +89,31 @@ def reset(nobackup: bool) -> None:
             f.write(old_db)
         sys.exit(0)
 
-def database(choice: str, verbose: bool, nobackup: bool, range: dict[str, str]) -> None:
+def database(choice: str, verbose: bool, nobackup: bool, summary: bool, range: dict[str, str]) -> None:
     '''python3 run.py database ...'''
     if choice == "reset": # python3 run.py database reset
         reset(nobackup)
     elif choice == "show": # python3 run.py database show [range]
         rows: list[sqlite3.Row] = get(range, verbose)
         headers = ['id', 'date', 'value', 'admin', 'total', 'party', 'category', 'active', 'passive', 'pathway', 'wallet']
-        print(tabulate(rows, headers=headers, tablefmt="fancy_grid"))
+        print("")
+        if not summary:
+            print(tabulate(rows, headers=headers, tablefmt="fancy_grid"))
+            print("")
+        # Total row count
+        total_rows = len(rows)
+        # Value column.
+        values = [row["total"] for row in rows]
+        # Sum of a specific column (e.g., 'value' or 'total')
+        total_sum = sum(values)
+        print(f"Total number of rows  : {total_rows} transactions.")
+        print(f"Sum of transactions   : {rupiah(total_sum)}")
+        print(f"Average transactions  : {rupiah(total_sum/total_rows)}")
+        print(f"Stdev of transactions : {statistics.stdev(values)}")
+        print(f"Range of transactions : {rupiah(max(values, default=0) - min(values, default=0))}")
+        print("")
+        print("* Admin fees are included.")
+        print("")
     else:
         raise InvalidCLIArgument(
             "Invalid CLI subcommand for command database: only reset and show are valid.")
