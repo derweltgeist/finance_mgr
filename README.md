@@ -56,6 +56,8 @@ There are several useful flags:
 - ```--summary``` for ```database show``` to generate only the summary (table is not generated).
 
 Notes:
-- The spreadsheet file must contain sheet tab named 'Mutation'
-- The table must have headers 'Date', 'Value', 'Admin', 'Total', 'Party', 'Category', 'Active', 'Passive', 'Pathway', and 'Wallet'
-- The database must contain table named 'transactions'
+- The spreadsheet file must contain sheet tab named 'Mutation'.
+- The sheet must contain 'Date', 'Value', 'Admin', 'Total', 'Party', 'Category', 'Active', 'Passive', 'Pathway', and 'Wallet'.
+- The database must contain table named 'transactions' with the same exact headers, but all must be lower case.
+- The configuration file must be named 'config.toml' and placed directly at the root directory of the project.
+- Pandas, tomlkit, and tabulate are required. Best to use the latest version of Python and all the dependencies.
