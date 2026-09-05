@@ -60,4 +60,4 @@ Notes:
 - The sheet must contain 'Date', 'Value', 'Admin', 'Total', 'Party', 'Category', 'Active', 'Passive', 'Pathway', and 'Wallet'.
 - The database must contain table named 'transactions' with the same exact headers, but all must be lower case.
 - The configuration file must be named 'config.toml' and placed directly at the root directory of the project.
-- Pandas, tomlkit, and tabulate are required. Best to use the latest version of Python and all the dependencies.
+- Pandas, tomlkit, and tabulate are required. Best to use the latest version of Python and all of the dependencies.
