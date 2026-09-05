@@ -55,4 +55,7 @@ There are several useful flags:
 - ```--nobackup``` for ```setup```, ```sheet import```, and ```database reset```, backup database will not be created.
 - ```--summary``` for ```database show``` to generate only the summary (table is not generated).
 
-The spreadsheet file must contain 'Mutation' sheet tab.
+Notes:
+- The spreadsheet file must contain sheet tab named 'Mutation'
+- The table must have headers 'Date', 'Value', 'Admin', 'Total', 'Party', 'Category', 'Active', 'Passive', 'Pathway', and 'Wallet'
+- The database must contain table named 'transactions'
