@@ -54,3 +54,5 @@ There are several useful flags:
 - ```--overwrite``` for ```sheet import```, the data will overwrite instead of be appended.
 - ```--nobackup``` for ```setup```, ```sheet import```, and ```database reset```, backup database will not be created.
 - ```--summary``` for ```database show``` to generate only the summary (table is not generated).
+
+The spreadsheet file must contain 'Mutation' sheet tab.
